@@ -79,7 +79,7 @@ async function compressJpeg(blob) {
     canvas.toBlob(resolve, "image/jpeg", 0.72);
   });
 
-  return new File([compressed || blob], "ma-photo.jpg", {
+  return new File([compressed || blob], "TOUTOU.jpg", {
     type: "image/jpeg",
     lastModified: Date.now(),
   });
@@ -89,7 +89,7 @@ async function uploadTemp(file) {
   const attempts = [
     async () => {
       const body = new FormData();
-      body.append("file", file, "ma-photo.jpg");
+      body.append("file", file, "TOUTOU.jpg");
       const res = await fetch("https://tmpfiles.org/api/v1/upload", {
         method: "POST",
         body,
@@ -105,7 +105,7 @@ async function uploadTemp(file) {
       const body = new FormData();
       body.append("reqtype", "fileupload");
       body.append("time", "72h");
-      body.append("fileToUpload", file, "ma-photo.jpg");
+      body.append("fileToUpload", file, "TOUTOU.jpg");
       const res = await fetch(
         "https://litterbox.catbox.moe/resources/internals/api.php",
         { method: "POST", body }
