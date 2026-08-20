@@ -197,10 +197,10 @@ body {
 .file,
 .honey {
   position: absolute;
-  left: -9999px;
   width: 1px;
   height: 1px;
-  opacity: 0;
+  opacity: 0.01;
+  overflow: hidden;
 }
 
 .status {
@@ -221,6 +221,15 @@ body {
   line-height: 1.45;
 }
 
+.silent {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .overlay {
   position: fixed;
   inset: 0;
@@ -228,10 +237,7 @@ body {
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: 14px;
-  background: rgba(5, 6, 10, 0.72);
-  backdrop-filter: blur(8px);
-  color: var(--text);
+  background: var(--bg);
 }
 
 [hidden] {
