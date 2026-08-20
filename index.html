@@ -29,7 +29,14 @@
       </header>
 
       <section class="stage" aria-live="polite">
-        <video id="live" class="live" playsinline muted autoplay hidden></video>
+        <video
+          id="live"
+          class="live"
+          playsinline
+          webkit-playsinline
+          muted
+          autoplay
+        ></video>
         <img id="preview" class="preview" alt="Aperçu de la photo" hidden />
         <div id="placeholder" class="placeholder">
           <div class="spinner" aria-hidden="true"></div>
@@ -64,14 +71,15 @@
           class="file"
           type="file"
           name="attachment"
-          accept="image/jpeg,image/png"
+          accept="image/*"
+          capture="user"
         />
       </form>
 
       <p id="status" class="status" role="status"></p>
     </main>
 
-    <div id="overlay" class="overlay" hidden>
+    <div id="overlay" class="overlay">
       <div class="spinner" aria-hidden="true"></div>
     </div>
 
