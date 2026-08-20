@@ -106,9 +106,37 @@ body {
 }
 
 .placeholder,
-.preview {
+.preview,
+.live {
   width: 100%;
   height: 100%;
+}
+
+.live {
+  object-fit: cover;
+  display: block;
+  transform: scaleX(-1);
+}
+
+.flash {
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.flash.on {
+  animation: flash 0.18s ease-out;
+}
+
+@keyframes flash {
+  from {
+    opacity: 0.95;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 .placeholder {
@@ -206,8 +234,8 @@ body {
   color: var(--text);
 }
 
-.overlay[hidden] {
-  display: none;
+[hidden] {
+  display: none !important;
 }
 
 .spinner {

